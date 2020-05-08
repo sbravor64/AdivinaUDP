@@ -35,6 +35,7 @@ public class Cliente {
         }
     }
 
+    // PROBLEMA BRAVE AL JUGADOR MÁS DE UNA PERSONA
     void runCliente() throws IOException {
         byte [] receivedData = new byte[1024];
         String l;

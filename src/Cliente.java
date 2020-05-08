@@ -35,29 +35,21 @@ public class Cliente {
         }
     }
 
-    public void setNombre(String nombre) {
-        this.nombre =nombre;
-    }
-
-    public int getIntentos() {
-        return intentos;
-    }
-
-    public void runCliente() throws IOException {
+    void runCliente() throws IOException {
         byte [] receivedData = new byte[1024];
-        int n;
+        String l;
         DatagramPacket packet;
         DatagramSocket socket = new DatagramSocket();
 
-        System.out.println("Hola " + nombre + "! Comenzamos!");
-        System.out.println("Adivina el Número");
-        System.out.println("Escribe tu primer numero: ");
+        System.out.println("Hola " + nombre + " !Comenzamos!");
+        System.out.println("Adivina la palabra");
 
         while(resultado !=0 && resultado !=-2 && resultado !=3) {
             Scanner sc = new Scanner(System.in);
-            n = sc.nextInt();
+            System.out.println("Escribe una letra: ");
+            l = sc.nextLine();
             jugada.nombre = nombre;
-            jugada.num = n;
+            jugada.letra = l;
 
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(os);
@@ -91,6 +83,10 @@ public class Cliente {
         }
     }
 
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
     private void setTablero(byte[] data) {
         ByteArrayInputStream in = new ByteArrayInputStream(data);
         try {
@@ -105,6 +101,18 @@ public class Cliente {
 
     }
 
+    private int getDataToRequest(byte[] data) {
+        setTablero(data);
+        String msg = null;
+        switch (tablero.resultado) {
+            case 0: msg = "Has adivinado la palabra"; break;
+            case 2: msg = "Seguimos"; break;
+        }
+        System.out.println(tablero.palabraAdivinadaHastaElMomento);
+        System.out.println(msg);
+        return tablero.resultado;
+    }
+
     private boolean printData(byte[] data) {
         setTablero(data);
         if(tablero.acabados == tablero.map_jugadores.size()) return false;
@@ -112,27 +120,10 @@ public class Cliente {
 
     }
 
-    private int getDataToRequest(byte[] data) {
-        setTablero(data);
-        String msg = null;
-        switch (tablero.resultado) {
-            case 0: msg = "Correcto"; break;
-            case 1: msg = "Más pequeño"; break;
-            case 2: msg = "Más grande"; break;
-            case 3: msg = "Dew"; break;
-        }
-        System.out.println(msg);
-        return tablero.resultado;
-    }
-
-
     public int getResultado() {
         return resultado;
     }
 
-    public void setResultado(int resultado) {
-        this.resultado = resultado;
-    }
 
     public static void main(String[] args) {
         String jugador, ipServidor;
@@ -144,20 +135,21 @@ public class Cliente {
         System.out.println("Nombre jugador:");
         jugador = sc.next();
 
-        Cliente clienteAdivina = new Cliente(ipServidor, 5556);
+        Cliente cliente = new Cliente(ipServidor, 5556);
+        cliente.setNombre(jugador);
 
-        clienteAdivina.setNombre(jugador);
         try {
-            clienteAdivina.runCliente();
+            cliente.runCliente();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        if(clienteAdivina.getResultado() == 0) {
-            System.out.println("Lo has conseguido con "+ clienteAdivina.tablero.map_jugadores.get(jugador).intValue() +" intentos");
-            clienteAdivina.tablero.map_jugadores.forEach((k, v)-> System.out.println(k + "->" + v));
+        if(cliente.getResultado() == 0) {
+            System.out.println("Lo has conseguido con "+ cliente.tablero.map_jugadores.get(jugador).intValue() +" intentos");
+            cliente.tablero.map_jugadores.forEach((k, v)-> System.out.println(k + "->" + v));
         } else {
             System.out.println("Has perdido");
         }
+
     }
 }

@@ -4,7 +4,7 @@ import java.net.*;
 public class ServidorUDP {
     DatagramSocket socket;
     int puerto, fin, acabados, multipuerto=5557;
-    NumeroSecreto numSecreto;
+    Adivina adivina;
     boolean acabado;
     Tablero tablero;
     MulticastSocket multisocket;
@@ -21,20 +21,23 @@ public class ServidorUDP {
             e.printStackTrace();
         }
         this.puerto = puerto;
-        numSecreto = new NumeroSecreto(max);
+        adivina = new Adivina();
         tablero = new Tablero();
         acabado = false;
         acabados = 0;
         fin =-1;
     }
 
-    public void runServer() throws IOException {
+    private void runServer() throws IOException {
         byte [] receivingData = new byte[1024];
         byte [] sendingData;
         InetAddress clientIP;
         int clientPort;
 
+        System.out.println("Palabra: " + adivina.palabra);
+
         while(acabados < tablero.map_jugadores.size() || acabados ==0){
+
             DatagramPacket packet = new DatagramPacket(receivingData, receivingData.length);
             socket.receive(packet);
             sendingData = processData(packet.getData());
@@ -56,12 +59,11 @@ public class ServidorUDP {
         try {
             ObjectInputStream ois = new ObjectInputStream(in);
             j = (Jugada) ois.readObject();
-            System.out.println("Jugador: " + j.nombre + " " + j.num);
-
+            System.out.println("Jugador: " + j.nombre + " " + j.letra);
             if(!tablero.map_jugadores.containsKey(j.nombre)) tablero.map_jugadores.put(j.nombre, 1);
             else {
-                int tirades = tablero.map_jugadores.get(j.nombre) + 1;
-                tablero.map_jugadores.put(j.nombre, tirades);
+                int intentos = tablero.map_jugadores.get(j.nombre) +1;
+                tablero.map_jugadores.put(j.nombre, intentos);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -69,8 +71,12 @@ public class ServidorUDP {
             e.printStackTrace();
         }
 
-        fin = tablero.resultado = numSecreto.comprueba(j.num);
-        if(fin ==0) {
+        adivina.palabraAdivinadaHastaElMomento = adivina.actualizarLetraAdivinadaHastaElMomento(j.letra.charAt(0));
+        tablero.palabraAdivinadaHastaElMomento = adivina.palabraAdivinadaHastaElMomento;
+
+        fin = tablero.resultado = adivina.comprueba();
+
+        if(fin == 0) {
             acabado = true;
             acabados++;
             tablero.acabados++;
@@ -89,9 +95,10 @@ public class ServidorUDP {
     }
 
     public static void main(String[] args) {
-        ServidorUDP sAdivina = new ServidorUDP(5556, 100);
+        ServidorUDP servidor = new ServidorUDP(5556, 100);
+
         try {
-            sAdivina.runServer();
+            servidor.runServer();
         } catch (IOException e) {
             e.printStackTrace();
         }
